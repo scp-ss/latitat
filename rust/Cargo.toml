@@ -1,0 +1,9 @@
+
+[workspace]
+members = [
+    "godot-bridge",
+    "rng",
+    "art_engine"
+]
+
+resolver = "3"

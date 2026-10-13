@@ -1,0 +1,12 @@
+[package]
+name = "godot-bridge"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+art_engine = {path = "../art_engine"}
+godot = "0.5.5"
+rng = {path = "../rng"}
