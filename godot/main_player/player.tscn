@@ -2,6 +2,14 @@
 
 [ext_resource type="Texture2D" uid="uid://4q335xxs2p" path="res://icon.svg" id="1_k1pjg"]
 
-[node name="Sprite2D" type="Player" unique_id=1053372446]
-position = Vector2(580, 326)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_1s07c"]
+size = Vector2(12.722376, 13.045824)
+
+[node name="MainPlayer" type="MainPlayer" unique_id=1332524629]
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1382348484]
 texture = ExtResource("1_k1pjg")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=89969516]
+scale = Vector2(9.275, 9.275)
+shape = SubResource("RectangleShape2D_1s07c")
