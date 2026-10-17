@@ -1,1 +1,0 @@
-2 * sqrt(mass * k), where k = water_density * volume * gravity * depth_gain,

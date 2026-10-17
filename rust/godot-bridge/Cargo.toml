@@ -12,3 +12,4 @@ art_engine = {path = "../art_engine"}
 rng = {path = "../rng"}
 data =  {path = "../data"}
 utils = {path = "../utils"}
+physics = {path = "../physics"}
