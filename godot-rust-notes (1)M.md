@@ -1,3 +1,12 @@
+# Points to note
+> + This is AI generated. 
+> + Thse are tips for me to write goodcode. 
+> + The entire projecti s made by hadn, No code was written by AI 
+ 
+
+
+<br><br> 
+
 # Godot + Rust Notes (refined, Oct 2026)
 
 Covers: Rust vs GDScript, how to organize code, the no-recompile tuning workflow, tips for godot-rust, Godot and Rust, engine callbacks vs custom API, signals, and a buoyancy + exported-params worked example.
