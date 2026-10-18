@@ -10,6 +10,7 @@ crate-type = ["cdylib"]
 godot = "0.5.5"
 art_engine = {path = "../art_engine"}
 rng = {path = "../rng"}
-data =  {path = "../data"}
+# data =  {path = "../data"}
 utils = {path = "../utils"}
 physics = {path = "../physics"}
+data = { git = "https://github.com/scp-ss/latitat", branch = "data" }

@@ -4,6 +4,6 @@ members = [
     "godot-bridge",
     "rng",
     "art_engine"
-, "data", "utils", "physics"]
+,  "utils", "physics"]
 
 resolver = "3"
