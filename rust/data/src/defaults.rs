@@ -40,7 +40,7 @@ impl Default for PlayerUtility {
             surface_area: 0.7,
             height: 1.75,
             length: 0.5,
-            volume: 0.085, // 70 kg / 0.085 m^3 = ~824 kg/m^3, so it floats
+            volume: 0.038, // 70 kg / 0.085 m^3 = ~824 kg/m^3, so it floats
         }
     }
 }

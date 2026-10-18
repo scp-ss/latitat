@@ -164,7 +164,8 @@ impl ICharacterBody2D for Player {
         body.move_and_slide();
         // move_and_slide already zeroes the velocity part that hit a wall or floor.
         drop(body);
-
+        //
+        // Rmemove the IA features and make ur own with gimpels nad shit and hwanott roboto ic arms nad nwanatot. ill code it brb
         if self.debug_print {
             self.debug_timer += delta;
             if self.debug_timer >= 0.5 {

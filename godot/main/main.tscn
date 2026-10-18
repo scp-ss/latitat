@@ -43,6 +43,9 @@ shape = SubResource("WorldBoundaryShape2D_1s07c")
 disabled = true
 
 [node name="MainPlayer" parent="." unique_id=1332524629 instance=ExtResource("1_53q0u")]
+hot_reload = false
+debug_print = false
+use_inspector = false
 position = Vector2(28, -85)
 
 [node name="StaticBody2D" type="StaticBody2D" parent="." unique_id=519052830]
