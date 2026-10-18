@@ -1,4 +1,4 @@
-mod player;
+mod main_player;
 
 use godot::prelude::*;
 
