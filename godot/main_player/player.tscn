@@ -5,17 +5,8 @@
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_1s07c"]
 size = Vector2(12.722376, 13.045824)
 
-[node name="MainPlayer" type="Player" unique_id=1038149673]
-debug_print = true
-use_inspector = true
-mass = 0.0
-move_force = 20000.0
-swim_force = 200000.0
-turn_boost = 5.5
-ground_friction = 3.09
-volume = 17.12
-water_density = 957.925
-water_drag = 23.145
+[node name="MainPlayer" type="CharacterBody2D" unique_id=1238337411]
+editor_description = "IDK what to put here so I decided to put this here :D"
 motion_mode = 1
 
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=1382348484]

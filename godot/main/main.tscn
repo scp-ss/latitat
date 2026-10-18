@@ -2,68 +2,11 @@
 
 [ext_resource type="PackedScene" uid="uid://blg2otna1altl" path="res://main_player/player.tscn" id="1_53q0u"]
 
-[sub_resource type="WorldBoundaryShape2D" id="WorldBoundaryShape2D_v8mhu"]
-distance = -0.99999535
-
-[sub_resource type="WorldBoundaryShape2D" id="WorldBoundaryShape2D_1s07c"]
-distance = -648.0
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_v8mhu"]
-size = Vector2(1162, 43)
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_1s07c"]
-size = Vector2(1299, 547.5)
-
 [node name="Main_tscn" type="Node2D" unique_id=54949955]
 position = Vector2(533, 177)
-
-[node name="Border" type="Node" parent="." unique_id=1998942381]
-
-[node name="LeftBorder" type="CollisionShape2D" parent="Border" unique_id=12377758]
-position = Vector2(0, 252)
-rotation = 1.5707964
-shape = SubResource("WorldBoundaryShape2D_v8mhu")
-disabled = true
-
-[node name="RightBorder" type="CollisionShape2D" parent="Border" unique_id=1043404210]
-position = Vector2(1152, 280)
-rotation = 4.712389
-shape = SubResource("WorldBoundaryShape2D_v8mhu")
-disabled = true
-
-[node name="BottomBorder" type="CollisionShape2D" parent="Border" unique_id=143218641]
-position = Vector2(566, 50)
-shape = SubResource("WorldBoundaryShape2D_1s07c")
-disabled = true
-
-[node name="TopBorder" type="CollisionShape2D" parent="Border" unique_id=1758991291]
-position = Vector2(564, 651)
-rotation = 3.1415927
-shape = SubResource("WorldBoundaryShape2D_1s07c")
-disabled = true
 
 [node name="MainPlayer" parent="." unique_id=1332524629 instance=ExtResource("1_53q0u")]
 hot_reload = false
 debug_print = false
 use_inspector = false
 position = Vector2(28, -85)
-
-[node name="StaticBody2D" type="StaticBody2D" parent="." unique_id=519052830]
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D" unique_id=1504200429]
-position = Vector2(30, 473.5)
-shape = SubResource("RectangleShape2D_v8mhu")
-
-[node name="Area2D" type="Area2D" parent="." unique_id=62680259 groups=["water"]]
-position = Vector2(205, 68)
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D" unique_id=1794999388]
-position = Vector2(-203, 204.25)
-shape = SubResource("RectangleShape2D_1s07c")
-
-[node name="ColorRect" type="ColorRect" parent="Area2D" unique_id=1805250946]
-offset_left = -900.0
-offset_top = -68.0
-offset_right = 477.0
-offset_bottom = 477.0
-color = Color(0, 1, 1, 0.2)

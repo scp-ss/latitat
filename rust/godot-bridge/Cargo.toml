@@ -12,5 +12,6 @@ art_engine = {path = "../art_engine"}
 rng = {path = "../rng"}
 # data =  {path = "../data"}
 utils = {path = "../utils"}
-physics = {path = "../physics"}
+# physics = {path = "../physics"}
 data = { git = "https://github.com/scp-ss/latitat", branch = "data" }
+# https://github.com/scp-ss/latitat/tree/
