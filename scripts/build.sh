@@ -115,8 +115,56 @@ build_windows() {
   fi
   export_platform windows "Windows Desktop" game.exe
 }
+build_android() {
+  local platform="android"
+  local folder="$GAME_NAME-v$VERSION-$platform"
+  local outdir="$ROOT/build/$platform/$folder"
 
-build_android() { echo "android: not set up yet, skipping"; }
+  command -v cargo-ndk >/dev/null || { echo "cargo-ndk is not installed (cargo install cargo-ndk)"; exit 1; }
+
+  local sdk="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}"
+  local jdk="${JAVA_HOME_17_X64:-${JAVA_HOME:-}}"
+  [ -n "$sdk" ] || { echo "ANDROID_HOME is not set"; exit 1; }
+  [ -n "$jdk" ] || { echo "No JDK found (JAVA_HOME is not set)"; exit 1; }
+
+  for v in GODOT_ANDROID_KEYSTORE_RELEASE_PATH GODOT_ANDROID_KEYSTORE_RELEASE_USER GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD; do
+    [ -n "${!v:-}" ] || { echo "$v is not set"; exit 1; }
+  done
+
+  rm -rf "$ROOT/build/$platform"
+  mkdir -p "$outdir" "$ROOT/export/$platform"
+
+  # 1. build the Rust library for Android (arm64 only)
+  ( cd "$ROOT/rustworkspace" && cargo ndk -t arm64-v8a build --release )
+
+  # 2. on the GitHub computer only: tell Godot where the SDK and JDK are
+  #    (never touches your own editor settings)
+  if [ "${CI:-}" = "true" ]; then
+    local mm
+    mm="$("$GODOT" --version | cut -d. -f1,2)"
+    mkdir -p "$HOME/.config/godot"
+    for f in "editor_settings-4.tres" "editor_settings-$mm.tres"; do
+      cat > "$HOME/.config/godot/$f" <<EOF
+[gd_resource type="EditorSettings" format=3]
+
+[resource]
+export/android/android_sdk_path = "$sdk"
+export/android/java_sdk_path = "$jdk"
+EOF
+    done
+  fi
+
+  # 3. import + export the signed release APK
+  ( cd "$ROOT/godot" && "$GODOT" --headless --import ) || true
+  ( cd "$ROOT/godot" && "$GODOT" --headless --export-release "Android" "$outdir/game.apk" )
+
+  # 4. APK on its own (for itch and phones) + a zip for the GitHub release
+  cp "$outdir/game.apk" "$ROOT/export/$platform/$folder.apk"
+  rm -f "$ROOT/export/$platform/$folder.zip"
+  ( cd "$ROOT/build/$platform" && make_zip "$ROOT/export/$platform/$folder.zip" "$folder" )
+  echo "Done: export/$platform/$folder.apk"
+}
+# build_android() { echo "android: not set up yet, skipping"; }
 build_web()     { echo "web: not set up yet, skipping"; }
 
 # ---------- run ----------
