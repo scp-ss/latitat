@@ -99,19 +99,19 @@ export_platform() {   # export_platform <platform> <godot preset> <output file n
 # ---------- one function per platform ----------
 build_linux() {
   [ "$HOST" = "linux" ] || { echo "Linux builds need a Linux machine."; exit 1; }
-  ( cd "$ROOT/rustworkspace" && cargo build --release )
+  ( cd "$ROOT/rust" && cargo build --release )
   export_platform linux "Linux" game.x86_64
 }
 
 build_windows() {
   if [ "$HOST" = "windows" ]; then
-    ( cd "$ROOT/rustworkspace" && cargo build --release )
+    ( cd "$ROOT/rust" && cargo build --release )
   else
     # cross-compile from Linux, then copy the dll to where .gdextension looks
-    ( cd "$ROOT/rustworkspace" && cargo build --release --target x86_64-pc-windows-gnu )
-    mkdir -p "$ROOT/rustworkspace/target/release"
-    cp "$ROOT/rustworkspace/target/x86_64-pc-windows-gnu/release/$CRATE_LIB.dll" \
-       "$ROOT/rustworkspace/target/release/"
+    ( cd "$ROOT/rust" && cargo build --release --target x86_64-pc-windows-gnu )
+    mkdir -p "$ROOT/rust/target/release"
+    cp "$ROOT/rust/target/x86_64-pc-windows-gnu/release/$CRATE_LIB.dll" \
+       "$ROOT/rust/target/release/"
   fi
   export_platform windows "Windows Desktop" game.exe
 }
