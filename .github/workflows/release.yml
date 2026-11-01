@@ -10,7 +10,7 @@ on:
         required: true
 
 env:
-  GODOT_VERSION: "4.7.2.stable.arch_linux.ed1daf0bf"
+  GODOT_VERSION: "4.7.2"
 
 jobs:
   build:
