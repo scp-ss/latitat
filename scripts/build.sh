@@ -135,7 +135,7 @@ build_android() {
   mkdir -p "$outdir" "$ROOT/export/$platform"
 
   # 1. build the Rust library for Android (arm64 only)
-  ( cd "$ROOT/rustworkspace" && cargo ndk -t arm64-v8a build --release )
+  ( cd "$ROOT/rust" && cargo ndk -t arm64-v8a build --release )
 
   # 2. on the GitHub computer only: tell Godot where the SDK and JDK are
   #    (never touches your own editor settings)
