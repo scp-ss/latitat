@@ -22,7 +22,7 @@ jobs:
 
       - uses: Swatinem/rust-cache@v2
         with:
-          workspaces: rustworkspace
+          workspaces: rust
 
       - uses: chickensoft-games/setup-godot@v2
         with:
