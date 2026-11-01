@@ -1,5 +1,4 @@
 # Lerna todo this without AI right so learn how to config ur own yml file.
-#
 name: Release
 
 on:
@@ -11,8 +10,12 @@ on:
         description: "Version to build, without the v (example: 0.0.1-test.1)"
         required: true
 
+permissions:
+  contents: read
+
 env:
   GODOT_VERSION: "4.7.2"
+  CARGO_NET_GIT_FETCH_WITH_CLI: "true"
 
 jobs:
   build:
@@ -20,11 +23,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Let cargo download this repo's other branches
+        run: git config --global url."https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
+
       - uses: dtolnay/rust-toolchain@stable
 
       - uses: Swatinem/rust-cache@v2
         with:
-          workspaces: rust
+          workspaces: rustworkspace
 
       - uses: chickensoft-games/setup-godot@v2
         with:
