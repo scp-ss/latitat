@@ -5,11 +5,12 @@ reloadable = true
 [libraries]
 linux.debug.x86_64   = "res://../rust/target/debug/libgodot_bridge.so"
 linux.release.x86_64 = "res://../rust/target/release/libgodot_bridge.so"
-windows.debug.x86_64   = "res://../rust/target/debug/godot_bridge.dll"
-windows.debug.x86_64 = "res://../rust/target/x86_64-pc-windows-gnu/debug/godot_bridge.dll"
 windows.release.x86_64 = "res://../rust/target/release/godot_bridge.dll"
-windows.release.x86_64 = "res://../rust/target/x86_64-pc-windows-gnu/release/godot_bridge.dll"
+; windows.debug.x86_64   = "res://../rust/target/debug/godot_bridge.dll"
+; windows.release.x86_64 = "res://../rust/target/release/godot_bridge.dll"
 ; macos.debug   = "res://../rust/target/debug/libgodot_bridge.dylib"
 ; macos.release = "res://../rust/target/release/libgodot_bridge.dylib"
 android.release.arm64 = "res://../rust/target/aarch64-linux-android/release/godot_bridge.so"
 ; rust/target/x86_64-pc-windows-gnu/release
+; windows.debug.x86_64 = "res://../rust/target/x86_64-pc-windows-gnu/debug/godot_bridge.dll"
+; windows.release.x86_64 = "res://../rust/target/x86_64-pc-windows-gnu/release/godot_bridge.dll"
