@@ -5,5 +5,5 @@
 /export
 /docs/book
 /build
-/scripts
+# /scripts
 # /expo
