@@ -3,6 +3,8 @@
 ## [Unreleased]
 - Working on: Water Physics
 
+## [0.1.0-prealpha.3] - 2026-11-7
+- Fixxed Target for itch.io
 
 ## [0.1.0-prealpha.2] - 2026-11-7
 - Did absolutly NOTHING
