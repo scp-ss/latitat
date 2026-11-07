@@ -165,8 +165,31 @@ EOF
   echo "Done: export/$platform/$folder.apk"
 }
 # build_android() { echo "android: not set up yet, skipping"; }
-build_web()     { echo "web: not set up yet, skipping"; }
+# build_web()     { echo "web: not set up yet, skipping"; }
+build_web() {
+  local platform="web"
+  local outdir="$ROOT/build/$platform/site"
+  local tc="${WEB_TOOLCHAIN:-nightly}"
+  local zipfile="$ROOT/export/$platform/$GAME_NAME-v$VERSION-$platform.zip"
 
+  rm -rf "$ROOT/build/$platform"
+  mkdir -p "$outdir" "$ROOT/export/$platform"
+
+  # 1. Rust library for wasm (nightly + build-std)
+  ( cd "$ROOT/rust" && cargo "+$tc" build -Zbuild-std --target wasm32-unknown-emscripten --release )
+
+  # 2. Godot export. index.html must end up at the ROOT of the output (itch needs that)
+  ( cd "$ROOT/godot" && "$GODOT" --headless --import ) || true
+  ( cd "$ROOT/godot" && "$GODOT" --headless --export-release "Web" "$outdir/index.html" )
+
+  [ -f "$outdir/index.html" ] || { echo "index.html is missing, the export failed"; exit 1; }
+  ls "$outdir" | grep -q '\.wasm$' || echo "WARNING: no .wasm in the output" >&2
+
+  # 3. zip the CONTENTS (no top-level folder, so index.html is at the root of the zip)
+  rm -f "$zipfile"
+  ( cd "$outdir" && make_zip "$zipfile" . )
+  echo "Done: export/$platform/$GAME_NAME-v$VERSION-$platform.zip"
+}
 # ---------- run ----------
 echo "Version: $VERSION"
 for p in "${PLATFORMS[@]}"; do

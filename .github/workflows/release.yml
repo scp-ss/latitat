@@ -15,16 +15,18 @@ permissions:
 env:
   GODOT_VERSION: "4.7.2"
   CARGO_NET_GIT_FETCH_WITH_CLI: "true"
-
+  WEB_NIGHTLY: "nightly-2026-10-15"
+  EMSCRIPTEN_VERSION: "4.0.11"
 jobs:
   build:
     strategy:
       fail-fast: false
       matrix:
         include:
-          - { name: linux,   os: ubuntu-latest,  rust_target: "" }
-          - { name: windows, os: windows-latest, rust_target: "" }
-          - { name: android, os: ubuntu-latest,  rust_target: "aarch64-linux-android" }
+          - { name: linux,   os: ubuntu-latest,  toolchain: stable,  rust_target: "",                       components: "" }
+          - { name: windows, os: windows-latest, toolchain: stable,  rust_target: "",                       components: "" }
+          - { name: android, os: ubuntu-latest,  toolchain: stable,  rust_target: "aarch64-linux-android",   components: "" }
+          - { name: web,     os: ubuntu-latest,  toolchain: web,     rust_target: "wasm32-unknown-emscripten", components: "rust-src" }
     runs-on: ${{ matrix.os }}
     defaults:
       run:
@@ -35,19 +37,46 @@ jobs:
       - name: Let cargo download this repo's other branches
         run: git config --global url."https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
 
-      - uses: dtolnay/rust-toolchain@stable
+      - name: Pick the Rust toolchain
+        id: tc
+        run: |
+          if [ "${{ matrix.toolchain }}" = "web" ]; then
+            echo "name=${{ env.WEB_NIGHTLY }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "name=stable" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: dtolnay/rust-toolchain@master
         with:
+          toolchain: ${{ steps.tc.outputs.name }}
           targets: ${{ matrix.rust_target }}
+          components: ${{ matrix.components }}
 
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: rust
+          key: ${{ matrix.name }}
 
       - uses: chickensoft-games/setup-godot@v2
         with:
           version: ${{ env.GODOT_VERSION }}
           use-dotnet: false
           include-templates: true
+
+      # ---------- Web only ----------
+      - name: Web - install Emscripten
+        if: matrix.name == 'web'
+        uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: ${{ env.EMSCRIPTEN_VERSION }}
+          actions-cache-folder: emsdk-cache
+
+      - name: Web - show versions
+        if: matrix.name == 'web'
+        run: |
+          emcc --version
+          rustc +${{ env.WEB_NIGHTLY }} --version
+      # ------------------------------
 
       # ---------- Android only ----------
       - name: Android - install JDK 17
@@ -86,6 +115,8 @@ jobs:
           echo "Building version $V"
 
       - name: Build ${{ matrix.name }}
+        env:
+          WEB_TOOLCHAIN: ${{ env.WEB_NIGHTLY }}
         run: bash scripts/build.sh --version "${{ steps.ver.outputs.version }}" --platform ${{ matrix.name }}
 
       - name: Show what was built
@@ -136,6 +167,7 @@ jobs:
             artifacts/linux/*.zip
             artifacts/windows/*.zip
             artifacts/android/*.apk
+            artifacts/web/*.zip
           prerelease: ${{ contains(github.ref_name, '-') }}
           fail_on_unmatched_files: false
 
@@ -175,6 +207,7 @@ jobs:
       - name: Push to itch.io
         run: |
           set -euo pipefail
+          echo "Target is: [$ITCH_TARGET]"
           if [ -z "$BUTLER_API_KEY" ]; then
             echo "::error::BUTLER_API_KEY secret is missing"
             exit 1
@@ -190,11 +223,20 @@ jobs:
             done
           done
 
-          # Android: push the .apk itself, not a zip
+          # Android: push the .apk itself
           for a in artifacts/android/*.apk; do
             [ -f "$a" ] || continue
             echo "==> pushing android"
             ./butler push "$a" "$ITCH_TARGET:android" --userversion "$V"
+          done
+
+          # Web: unzip, then push the folder (index.html must be at its root)
+          for z in artifacts/web/*.zip; do
+            [ -f "$z" ] || continue
+            mkdir -p itch/web
+            unzip -q "$z" -d itch/web
+            echo "==> pushing web"
+            ./butler push itch/web "$ITCH_TARGET:web" --userversion "$V"
           done
 
           echo "==> itch.io channels now:"
@@ -353,12 +395,13 @@ jobs:
 #             echo "### Notes"
 #             cat release-notes.md
 #           } >> "$GITHUB_STEP_SUMMARY"
-# itch:
+
+#   itch:
 #     needs: build
 #     if: ${{ !cancelled() && startsWith(github.ref, 'refs/tags/v') && !contains(github.ref_name, '-test') }}
 #     runs-on: ubuntu-latest
 #     env:
-#       ITCH_TARGET: YOURNAME/YOURGAME
+#       ITCH_TARGET: scp-ss/latitat
 #       BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
 #     steps:
 #       - uses: actions/download-artifact@v4
@@ -381,14 +424,12 @@ jobs:
 #           fi
 #           V="${GITHUB_REF_NAME#v}"
 
-#           # Linux and Windows: unzip, then push the folder (keeps the named top-level folder)
+#           # Linux and Windows: push the zip file itself
 #           for p in linux windows; do
 #             for z in artifacts/$p/*.zip; do
 #               [ -f "$z" ] || continue
-#               mkdir -p "itch/$p"
-#               unzip -q "$z" -d "itch/$p"
 #               echo "==> pushing $p"
-#               ./butler push "itch/$p" "$ITCH_TARGET:$p" --userversion "$V"
+#               ./butler push "$z" "$ITCH_TARGET:$p" --userversion "$V"
 #             done
 #           done
 
@@ -401,7 +442,8 @@ jobs:
 
 #           echo "==> itch.io channels now:"
 #           ./butler status "$ITCH_TARGET"
-# # name: Releas
+# # name: Release
+
 # # on:
 # #   push:
 # #     tags: ["v*"]
@@ -490,6 +532,9 @@ jobs:
 # #       - name: Build ${{ matrix.name }}
 # #         run: bash scripts/build.sh --version "${{ steps.ver.outputs.version }}" --platform ${{ matrix.name }}
 
+# #       - name: Show what was built
+# #         run: ls -lh export/${{ matrix.name }}
+
 # #       - uses: actions/upload-artifact@v4
 # #         with:
 # #           name: ${{ matrix.name }}
@@ -498,7 +543,7 @@ jobs:
 
 # #   release:
 # #     needs: build
-# #     if: startsWith(github.ref, 'refs/tags/v')
+# #     if: ${{ !cancelled() && startsWith(github.ref, 'refs/tags/v') }}
 # #     runs-on: ubuntu-latest
 # #     permissions:
 # #       contents: write
@@ -516,12 +561,15 @@ jobs:
 # #             index($0, "## [" v "]") == 1 { f=1; next }
 # #             /^## \[/ { f=0 }
 # #             f
-# #           ' CHANGELOG.md > release-notes.md
-# #           if [ ! -s release-notes.md ]; then
-# #             echo "No changelog section found for $V." >&2
-# #             echo "See CHANGELOG.md for details." > release-notes.md
+# #           ' CHANGELOG.md | sed '/^<!--.*-->$/d' > release-notes.md
+# #           if ! grep -q '[^[:space:]]' release-notes.md; then
+# #             echo "::warning::No changelog section found for $V (expected a heading like: ## [$V] - date)"
+# #             echo "No changelog entry was written for this version." > release-notes.md
 # #           fi
+# #           { echo; echo "---"; echo "Platforms in this release: $(ls artifacts | tr '\n' ' ')"; } >> release-notes.md
+# #           echo "===== RELEASE NOTES ====="
 # #           cat release-notes.md
+# #           echo "===== FILES ====="
 # #           ls -R artifacts
 
 # #       - uses: softprops/action-gh-release@v2
@@ -533,9 +581,70 @@ jobs:
 # #             artifacts/windows/*.zip
 # #             artifacts/android/*.apk
 # #           prerelease: ${{ contains(github.ref_name, '-') }}
-# # # # Lerna todo this without AI right so learn how to config ur own yml file.
-# # # name: Release
+# #           fail_on_unmatched_files: false
 
+# #       - name: Summary
+# #         run: |
+# #           {
+# #             echo "## Released ${GITHUB_REF_NAME}"
+# #             echo
+# #             echo "https://github.com/${GITHUB_REPOSITORY}/releases/tag/${GITHUB_REF_NAME}"
+# #             echo
+# #             echo "### Files"
+# #             ls -1 artifacts/*/* | sed 's/^/- /'
+# #             echo
+# #             echo "### Notes"
+# #             cat release-notes.md
+# #           } >> "$GITHUB_STEP_SUMMARY"
+# # itch:
+# #     needs: build
+# #     if: ${{ !cancelled() && startsWith(github.ref, 'refs/tags/v') && !contains(github.ref_name, '-test') }}
+# #     runs-on: ubuntu-latest
+# #     env:
+# #       ITCH_TARGET: YOURNAME/YOURGAME
+# #       BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+# #     steps:
+# #       - uses: actions/download-artifact@v4
+# #         with:
+# #           path: artifacts
+
+# #       - name: Install butler
+# #         run: |
+# #           curl -L -o butler.zip https://broth.itch.zone/butler/linux-amd64/LATEST/archive/default
+# #           unzip -q butler.zip
+# #           chmod +x butler
+# #           ./butler --version
+
+# #       - name: Push to itch.io
+# #         run: |
+# #           set -euo pipefail
+# #           if [ -z "$BUTLER_API_KEY" ]; then
+# #             echo "::error::BUTLER_API_KEY secret is missing"
+# #             exit 1
+# #           fi
+# #           V="${GITHUB_REF_NAME#v}"
+
+# #           # Linux and Windows: unzip, then push the folder (keeps the named top-level folder)
+# #           for p in linux windows; do
+# #             for z in artifacts/$p/*.zip; do
+# #               [ -f "$z" ] || continue
+# #               mkdir -p "itch/$p"
+# #               unzip -q "$z" -d "itch/$p"
+# #               echo "==> pushing $p"
+# #               ./butler push "itch/$p" "$ITCH_TARGET:$p" --userversion "$V"
+# #             done
+# #           done
+
+# #           # Android: push the .apk itself, not a zip
+# #           for a in artifacts/android/*.apk; do
+# #             [ -f "$a" ] || continue
+# #             echo "==> pushing android"
+# #             ./butler push "$a" "$ITCH_TARGET:android" --userversion "$V"
+# #           done
+
+# #           echo "==> itch.io channels now:"
+# #           ./butler status "$ITCH_TARGET"
+# # # name: Releas
 # # # on:
 # # #   push:
 # # #     tags: ["v*"]
@@ -554,7 +663,17 @@ jobs:
 
 # # # jobs:
 # # #   build:
-# # #     runs-on: ubuntu-latest
+# # #     strategy:
+# # #       fail-fast: false
+# # #       matrix:
+# # #         include:
+# # #           - { name: linux,   os: ubuntu-latest,  rust_target: "" }
+# # #           - { name: windows, os: windows-latest, rust_target: "" }
+# # #           - { name: android, os: ubuntu-latest,  rust_target: "aarch64-linux-android" }
+# # #     runs-on: ${{ matrix.os }}
+# # #     defaults:
+# # #       run:
+# # #         shell: bash
 # # #     steps:
 # # #       - uses: actions/checkout@v4
 
@@ -562,6 +681,8 @@ jobs:
 # # #         run: git config --global url."https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
 
 # # #       - uses: dtolnay/rust-toolchain@stable
+# # #         with:
+# # #           targets: ${{ matrix.rust_target }}
 
 # # #       - uses: Swatinem/rust-cache@v2
 # # #         with:
@@ -572,6 +693,31 @@ jobs:
 # # #           version: ${{ env.GODOT_VERSION }}
 # # #           use-dotnet: false
 # # #           include-templates: true
+
+# # #       # ---------- Android only ----------
+# # #       - name: Android - install JDK 17
+# # #         if: matrix.name == 'android'
+# # #         uses: actions/setup-java@v4
+# # #         with:
+# # #           distribution: temurin
+# # #           java-version: "17"
+
+# # #       - name: Android - install cargo-ndk
+# # #         if: matrix.name == 'android'
+# # #         run: cargo install cargo-ndk --locked
+
+# # #       - name: Android - restore the signing key
+# # #         if: matrix.name == 'android'
+# # #         env:
+# # #           KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+# # #           KEYSTORE_USER: ${{ secrets.ANDROID_KEYSTORE_USER }}
+# # #           KEYSTORE_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+# # #         run: |
+# # #           echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/release.keystore"
+# # #           echo "GODOT_ANDROID_KEYSTORE_RELEASE_PATH=$RUNNER_TEMP/release.keystore" >> "$GITHUB_ENV"
+# # #           echo "GODOT_ANDROID_KEYSTORE_RELEASE_USER=$KEYSTORE_USER" >> "$GITHUB_ENV"
+# # #           echo "GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD=$KEYSTORE_PASS" >> "$GITHUB_ENV"
+# # #       # ----------------------------------
 
 # # #       - name: Work out the version
 # # #         id: ver
@@ -584,11 +730,108 @@ jobs:
 # # #           echo "version=$V" >> "$GITHUB_OUTPUT"
 # # #           echo "Building version $V"
 
-# # #       - name: Build Linux
-# # #         run: scripts/build.sh --version "${{ steps.ver.outputs.version }}" --platform linux
+# # #       - name: Build ${{ matrix.name }}
+# # #         run: bash scripts/build.sh --version "${{ steps.ver.outputs.version }}" --platform ${{ matrix.name }}
 
 # # #       - uses: actions/upload-artifact@v4
 # # #         with:
-# # #           name: linux
-# # #           path: export/linux/*.zip
+# # #           name: ${{ matrix.name }}
+# # #           path: export/${{ matrix.name }}/*
 # # #           if-no-files-found: error
+
+# # #   release:
+# # #     needs: build
+# # #     if: startsWith(github.ref, 'refs/tags/v')
+# # #     runs-on: ubuntu-latest
+# # #     permissions:
+# # #       contents: write
+# # #     steps:
+# # #       - uses: actions/checkout@v4
+
+# # #       - uses: actions/download-artifact@v4
+# # #         with:
+# # #           path: artifacts
+
+# # #       - name: Release notes from CHANGELOG.md
+# # #         run: |
+# # #           V="${GITHUB_REF_NAME#v}"
+# # #           awk -v v="$V" '
+# # #             index($0, "## [" v "]") == 1 { f=1; next }
+# # #             /^## \[/ { f=0 }
+# # #             f
+# # #           ' CHANGELOG.md > release-notes.md
+# # #           if [ ! -s release-notes.md ]; then
+# # #             echo "No changelog section found for $V." >&2
+# # #             echo "See CHANGELOG.md for details." > release-notes.md
+# # #           fi
+# # #           cat release-notes.md
+# # #           ls -R artifacts
+
+# # #       - uses: softprops/action-gh-release@v2
+# # #         with:
+# # #           name: ${{ github.ref_name }}
+# # #           body_path: release-notes.md
+# # #           files: |
+# # #             artifacts/linux/*.zip
+# # #             artifacts/windows/*.zip
+# # #             artifacts/android/*.apk
+# # #           prerelease: ${{ contains(github.ref_name, '-') }}
+# # # # # Lerna todo this without AI right so learn how to config ur own yml file.
+# # # # name: Release
+
+# # # # on:
+# # # #   push:
+# # # #     tags: ["v*"]
+# # # #   workflow_dispatch:
+# # # #     inputs:
+# # # #       version:
+# # # #         description: "Version to build, without the v (example: 0.0.1-test.1)"
+# # # #         required: true
+
+# # # # permissions:
+# # # #   contents: read
+
+# # # # env:
+# # # #   GODOT_VERSION: "4.7.2"
+# # # #   CARGO_NET_GIT_FETCH_WITH_CLI: "true"
+
+# # # # jobs:
+# # # #   build:
+# # # #     runs-on: ubuntu-latest
+# # # #     steps:
+# # # #       - uses: actions/checkout@v4
+
+# # # #       - name: Let cargo download this repo's other branches
+# # # #         run: git config --global url."https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
+
+# # # #       - uses: dtolnay/rust-toolchain@stable
+
+# # # #       - uses: Swatinem/rust-cache@v2
+# # # #         with:
+# # # #           workspaces: rust
+
+# # # #       - uses: chickensoft-games/setup-godot@v2
+# # # #         with:
+# # # #           version: ${{ env.GODOT_VERSION }}
+# # # #           use-dotnet: false
+# # # #           include-templates: true
+
+# # # #       - name: Work out the version
+# # # #         id: ver
+# # # #         run: |
+# # # #           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+# # # #             V="${{ github.event.inputs.version }}"
+# # # #           else
+# # # #             V="${GITHUB_REF_NAME#v}"
+# # # #           fi
+# # # #           echo "version=$V" >> "$GITHUB_OUTPUT"
+# # # #           echo "Building version $V"
+
+# # # #       - name: Build Linux
+# # # #         run: scripts/build.sh --version "${{ steps.ver.outputs.version }}" --platform linux
+
+# # # #       - uses: actions/upload-artifact@v4
+# # # #         with:
+# # # #           name: linux
+# # # #           path: export/linux/*.zip
+# # # #           if-no-files-found: error
