@@ -3,6 +3,10 @@
 ## [Unreleased]
 - Working on: Water Physics
 
+
+## [0.1.0-prealpha.2] - 2026-11-7
+- Did absolutly NOTHING
+
 <!--## [0.1.0-prealpha.1] - 2026-11-01-->
 ## [0.1.0-prealpha.1] - 2026-11-05
 - First public build
