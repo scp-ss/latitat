@@ -181,14 +181,12 @@ jobs:
           fi
           V="${GITHUB_REF_NAME#v}"
 
-          # Linux and Windows: unzip, then push the folder (keeps the named top-level folder)
+          # Linux and Windows: push the zip file itself
           for p in linux windows; do
             for z in artifacts/$p/*.zip; do
               [ -f "$z" ] || continue
-              mkdir -p "itch/$p"
-              unzip -q "$z" -d "itch/$p"
               echo "==> pushing $p"
-              ./butler push "itch/$p" "$ITCH_TARGET:$p" --userversion "$V"
+              ./butler push "$z" "$ITCH_TARGET:$p" --userversion "$V"
             done
           done
 
