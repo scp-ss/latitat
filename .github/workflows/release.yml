@@ -15,8 +15,8 @@ permissions:
 env:
   GODOT_VERSION: "4.7.2"
   CARGO_NET_GIT_FETCH_WITH_CLI: "true"
-  WEB_NIGHTLY: "nightly-YYYY-MM-DD"      # from: rustc +nightly --version
-  EMSCRIPTEN_VERSION: "3.1.73"           # from: emcc --version
+  WEB_NIGHTLY: "nightly-2026-10-15"      # from: rustc +nightly --version
+  EMSCRIPTEN_VERSION: "4.0.11"           # from: emcc --version
 
 jobs:
   build:
