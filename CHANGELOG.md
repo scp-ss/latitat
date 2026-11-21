@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 - Working on: Water Physics
+- Make push.sh script automatically add a changelog by looking at date. It should jsut ask me 'enter what new features have been added'
+
+## [0.1.0-prealpha.4] - 2026/11/21
+- Fixxed webversionbuild by addinghte correct depi.
+
 
 ## [0.1.0-prealpha.3] - 2026-11-7
 - Fixxed Target for itch.io

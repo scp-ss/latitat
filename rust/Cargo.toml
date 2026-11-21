@@ -7,3 +7,5 @@ members = [
 ,  "utils", "physics"]
 
 resolver = "3"
+# [dependencies]
+# godot = { version = "0.5.5", features = ["experimental-wasm", "lazy-function-tables"] }
